@@ -2,84 +2,90 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Monitor de Vibración</title>
+  <title>Detector Caídas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <h1>
-      <img src="https://thumbs.dreamstime.com/z/esqueleto-rojo-con-el-s%C3%ADmbolo-de-la-alerta-de-la-radiaci%C3%B3n-19655097.jpg" alt="icon" class="logo"/>
-      DETECTOR CAIDAS
+      <img src="{{ url_for('static', filename='peligro.png') }}" alt="Peligro radioactivo" class="logo"/>
+      DETECTOR CAÍDAS – RADIOACTIVO
     </h1>
-    <div id="status" class="estado gris">Cargando datos…</div>
-    <div class="historial-block">
-      <b style="font-size:1.13rem;">Historial de Caídas</b>
-      <ul id="historial"><li>Cargando…</li></ul>
-      <button id="btn-reset" class="btn-reset">Limpiar Alerta</button>
 
+    <div id="status" class="estado gris">Cargando datos…</div>
+
+    <div class="historial-block">
+      <b>Historial de Caídas</b>
+      <ul id="historial"><li>Cargando…</li></ul>
+      <div class="botones">
+        <button id="btn-stop" class="btn">Parar Alerta</button>
+        <button id="btn-clear" class="btn">Limpiar Historial</button>
+      </div>
     </div>
   </div>
+
   <audio id="alerta-audio" preload="auto">
     <source src="https://cdn.pixabay.com/audio/2022/10/16/audio_12b71e1a39.mp3" type="audio/mpeg">
     <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
   </audio>
+
   <script>
     let ultimaAlerta = false;
+
     async function actualizar() {
       // 1) Estado actual
       const resE = await fetch('/state');
-      const dataE = await resE.json();
+      const { tipo } = await resE.json();
       const el = document.getElementById('status');
-      const body = document.body;
-      let reproducirAlerta = false;
+      document.body.classList.toggle('full-alerta', tipo==='alerta');
 
-      if (dataE.tipo === 'alerta') {
+      if (tipo==='alerta') {
         el.textContent = '🚨 ¡CAÍDA DETECTADA!';
         el.className = 'estado rojo';
-        body.classList.add('full-alerta');
-        reproducirAlerta = !ultimaAlerta;
+        if (!ultimaAlerta) {
+          document.getElementById('alerta-audio').play().catch(()=>{});
+        }
         ultimaAlerta = true;
       } else {
         el.textContent = '— Sin caídas detectadas —';
         el.className = 'estado gris';
-        body.classList.remove('full-alerta');
         ultimaAlerta = false;
       }
-      if (reproducirAlerta) {
-        document.getElementById('alerta-audio').play().catch(()=>{});
-      }
 
-      // 2) Historial solo de caídas
+      // 2) Historial
       const resH = await fetch('/history');
       const dataH = await resH.json();
       const ul = document.getElementById('historial');
-      ul.innerHTML = '';  // limpiar
-      if (dataH.length === 0) {
+      ul.innerHTML = '';
+      if (dataH.length===0) {
         ul.innerHTML = '<li>No hay caídas registradas.</li>';
       } else {
-        dataH.forEach(evt => {
+        dataH.forEach(evt=>{
           const li = document.createElement('li');
-          li.innerHTML = `<span class="evento-rojo">🚨</span> <span style="min-width:100px;display:inline-block;">${evt.ts}</span> <span>Caída detectada</span>`;
+          li.innerHTML = `<span class="evento-rojo">🚨</span>
+                          <span class="ts">${evt.ts}</span>
+                          <span>Caída detectada</span>`;
           ul.appendChild(li);
         });
       }
     }
-    setInterval(actualizar, 1200);
-    window.onload = actualizar;
-    // Reproduce audio en primer touch (por móviles)
-    document.body.addEventListener('touchstart', ()=>{
-      document.getElementById('alerta-audio').play().catch(()=>{});
-    }, {once:true});
-    // Al final de tu script, después de window.onload:
-document.getElementById('btn-reset')
-  .addEventListener('click', async () => {
-    // Llamamos al endpoint /ruido para resetear
-    await fetch('/ruido', { method: 'POST' });
-    // Volvemos a recargar el estado en pantalla
-    actualizar();
-});
 
+    window.onload = ()=>{
+      actualizar();
+      setInterval(actualizar, 1200);
+
+      // Botones
+      document.getElementById('btn-stop')
+        .addEventListener('click', ()=>fetch('/ruido',{method:'POST'}).then(actualizar));
+      document.getElementById('btn-clear')
+        .addEventListener('click', ()=>fetch('/clear',{method:'POST'}).then(actualizar));
+
+      // Prepara audio en móviles
+      document.body.addEventListener('touchstart', ()=>{
+        document.getElementById('alerta-audio').play().catch(()=>{});
+      },{once:true});
+    };
   </script>
 </body>
 </html>

@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
 import os
+
 app = Flask(__name__)
 CORS(app)
 
@@ -17,34 +18,37 @@ def registrar_evento(tipo):
 
 @app.route('/leve', methods=['POST'])
 def vibracion_leve():
-    # No registrar en historial
+    # No registramos en historial, solo actualizamos estado
     estado['tipo'] = 'leve'
     return ('', 204)
 
 @app.route('/alerta', methods=['POST'])
 def caida_alerta():
-    print("🔥 LLEGÓ POST /alerta")
     registrar_evento('alerta')
     return ('', 204)
 
 @app.route('/ruido', methods=['POST'])
 def ruido_descartado():
-    # No registrar en historial
+    # Parar alerta (modo sin caídas)
+    estado['tipo'] = 'sin_datos'
+    return ('', 204)
+
+@app.route('/clear', methods=['POST'])
+def clear_history():
+    # Borra todo el historial y para la alerta
+    historial.clear()
     estado['tipo'] = 'sin_datos'
     return ('', 204)
 
 @app.route('/state', methods=['GET'])
 def get_state():
-    # Solo mostrar "alerta" o "sin caídas"
-    if estado['tipo'] == 'alerta':
-        return jsonify({'tipo': 'alerta'})
-    else:
-        return jsonify({'tipo': 'sin_datos'})
+    # Solo dos estados: alerta o sin_datos
+    return jsonify({'tipo': 'alerta' if estado['tipo']=='alerta' else 'sin_datos'})
 
 @app.route('/history', methods=['GET'])
 def get_history():
-    # Solo mostrar eventos tipo 'alerta' (caídas) en el historial
-    caidas = [evento for evento in historial if evento['tipo'] == 'alerta']
+    # Solo caídas
+    caidas = [e for e in historial if e['tipo']=='alerta']
     return jsonify(caidas[-20:][::-1])
 
 @app.route('/')
