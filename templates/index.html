@@ -10,12 +10,14 @@
   <div class="container">
     <h1>
       <img src="https://thumbs.dreamstime.com/z/esqueleto-rojo-con-el-s%C3%ADmbolo-de-la-alerta-de-la-radiaci%C3%B3n-19655097.jpg" alt="icon" class="logo"/>
-      DETECTOR CAIDAS - RADIOACTIVO
+      DETECTOR CAIDAS
     </h1>
     <div id="status" class="estado gris">Cargando datos…</div>
     <div class="historial-block">
       <b style="font-size:1.13rem;">Historial de Caídas</b>
       <ul id="historial"><li>Cargando…</li></ul>
+      <button id="btn-reset" class="btn-reset">Limpiar Alerta</button>
+
     </div>
   </div>
   <audio id="alerta-audio" preload="auto">
@@ -69,6 +71,15 @@
     document.body.addEventListener('touchstart', ()=>{
       document.getElementById('alerta-audio').play().catch(()=>{});
     }, {once:true});
+    // Al final de tu script, después de window.onload:
+document.getElementById('btn-reset')
+  .addEventListener('click', async () => {
+    // Llamamos al endpoint /ruido para resetear
+    await fetch('/ruido', { method: 'POST' });
+    // Volvemos a recargar el estado en pantalla
+    actualizar();
+});
+
   </script>
 </body>
 </html>

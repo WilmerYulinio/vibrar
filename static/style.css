@@ -121,3 +121,16 @@ h1 {
 ::-webkit-scrollbar-thumb {background: #e84118;}
 ::-webkit-scrollbar-track {background: #fff;}
 ::-webkit-scrollbar {width: 9px;}
+.btn-reset {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #555;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-reset:hover {
+  background: #444;
+}
